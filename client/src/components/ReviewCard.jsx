@@ -1,76 +1,46 @@
 import React from 'react';
 
-const FullStar = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="#FBBF24">
-    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-  </svg>
-);
-
-const EmptyStar = ({ size = 16 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="#E5E7EB">
-    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-  </svg>
-);
-
-export default function ReviewCard({ review }) {
-  const { fullName, subject, reviewText, rating, createdAt } = review;
-
-  const formatReviewDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    if (isNaN(date)) return '';
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    const hours = String(date.getHours()).padStart(2, '0');
-    const minutes = String(date.getMinutes()).padStart(2, '0');
-    return `${day}-${month}-${year}, ${hours}:${minutes}`;
-  };
-
-  const renderStars = (count) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      if (i <= count) {
-        stars.push(<FullStar key={i} />);
-      } else {
-        stars.push(<EmptyStar key={i} />);
-      }
+const StarRating = ({ rating }) => {
+  const stars = [];
+  for (let i = 1; i <= 5; i++) {
+    if (rating >= i) {
+      stars.push(
+        <svg key={i} fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      );
+    } else {
+      stars.push(
+        <svg key={i} className="star-empty" fill="currentColor" viewBox="0 0 20 20">
+          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+        </svg>
+      );
     }
-    return stars;
-  };
+  }
+  return <div className="stars-display">{stars}</div>;
+};
 
-  // Generate a slightly unique avatar based on the reviewer's name
-  const avatarUrl = `https://i.pravatar.cc/50?u=${encodeURIComponent(fullName)}`;
+const ReviewCard = ({ review }) => {
+  const dateObj = new Date(review.createdAt);
+  const formattedDate = `${String(dateObj.getDate()).padStart(2, '0')}-${String(dateObj.getMonth() + 1).padStart(2, '0')}-${dateObj.getFullYear()}, ${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
 
   return (
     <div className="review-card">
-      <div className="review-card-left">
-        {/* Avatar */}
-        <img
-          src={avatarUrl}
-          alt={fullName}
-          className="reviewer-avatar"
-          onError={(e) => {
-            // fallback if pravatar is down
-            e.target.src = 'https://i.pravatar.cc/50';
-          }}
-        />
-
-        {/* Content */}
-        <div className="review-content-wrapper">
-          <div className="reviewer-name">{fullName}</div>
-          <div className="review-date">{formatReviewDate(createdAt)}</div>
-          {subject && <h4 className="review-subject">{subject}</h4>}
-          <p className="review-text-body">{reviewText}</p>
+      <img src={`https://i.pravatar.cc/50?u=${review._id}`} alt="avatar" className="review-avatar" />
+      <div className="review-content">
+        <div className="review-header">
+          <div>
+            <div className="review-author">{review.fullName}</div>
+            <div className="review-date">{formattedDate}</div>
+          </div>
+          <StarRating rating={review.rating} />
         </div>
-      </div>
-
-      {/* Star Rating on the Right */}
-      <div className="review-card-right">
-        <div className="star-container">
-          {renderStars(rating)}
+        <div className="review-text">
+          {review.reviewText}
         </div>
       </div>
     </div>
   );
-}
+};
+
+export default ReviewCard;

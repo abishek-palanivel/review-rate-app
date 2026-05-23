@@ -1,160 +1,128 @@
 import React, { useState } from 'react';
+import api from '../api';
 
-const FullStar = ({ size = 28 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="#FBBF24">
-    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-  </svg>
-);
+const StarRatingInput = ({ rating, setRating }) => {
+  const [hover, setHover] = useState(0);
 
-const EmptyStar = ({ size = 28 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="#E5E7EB">
-    <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-  </svg>
-);
+  const getLabel = (rating) => {
+    switch (rating) {
+      case 1: return 'Terrible';
+      case 2: return 'Bad';
+      case 3: return 'Okay';
+      case 4: return 'Satisfied';
+      case 5: return 'Excellent';
+      default: return '';
+    }
+  };
 
-const labels = {
-  1: 'Terrible',
-  2: 'Bad',
-  3: 'Okay',
-  4: 'Satisfied',
-  5: 'Excellent'
+  return (
+    <div className="star-rating-input">
+      <div className="stars">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <svg
+            key={star}
+            className={star <= (hover || rating) ? 'active' : ''}
+            onMouseEnter={() => setHover(star)}
+            onMouseLeave={() => setHover(0)}
+            onClick={() => setRating(star)}
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+          </svg>
+        ))}
+      </div>
+      <span className="star-label">{getLabel(hover || rating)}</span>
+    </div>
+  );
 };
 
-export default function AddReviewModal({ isOpen, onClose, onSave }) {
-  const [fullName, setFullName] = useState('');
-  const [subject, setSubject] = useState('');
-  const [reviewText, setReviewText] = useState('');
+const AddReviewModal = ({ isOpen, onClose, companyId, onAdded }) => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    subject: '',
+    reviewText: ''
+  });
   const [rating, setRating] = useState(0);
-  const [hoverRating, setHoverRating] = useState(0);
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (rating === 0) {
+      setError('Please select a rating');
+      return;
+    }
+    try {
+      await api.post(`/companies/${companyId}/reviews`, { ...formData, rating });
+      onAdded();
+      onClose();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to add review');
+    }
+  };
+
   const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
+    if (e.target.className === 'modal-overlay') {
       onClose();
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (!fullName.trim()) {
-      setError('Full name is required.');
-      return;
-    }
-    if (!reviewText.trim()) {
-      setError('Review description is required.');
-      return;
-    }
-    if (rating === 0) {
-      setError('Please select a star rating.');
-      return;
-    }
-
-    onSave({
-      fullName: fullName.trim(),
-      subject: subject.trim(),
-      reviewText: reviewText.trim(),
-      rating
-    });
-  };
-
-  const activeRating = hoverRating || rating;
-
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content">
-        {/* Decorative Blobs */}
-        <div className="modal-blobs">
-          <div className="modal-blob-1"></div>
-          <div className="modal-blob-2"></div>
-        </div>
-
-        {/* Close Button */}
-        <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">
-          &times;
-        </button>
-
-        {/* Title */}
+        <div className="modal-blob"></div>
+        <button className="modal-close" onClick={onClose}>&times;</button>
         <h2 className="modal-title">Add Review</h2>
-
-        {error && (
-          <div className="error-alert-banner">
-            <span>{error}</span>
-            <button className="error-alert-close" onClick={() => setError('')}>&times;</button>
-          </div>
-        )}
-
-        {/* Form */}
-        <form className="modal-form" onSubmit={handleSubmit}>
+        {error && <div className="error-message">{error}</div>}
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="reviewer-name">Full Name</label>
-            <input
-              type="text"
-              id="reviewer-name"
-              className="form-input"
-              placeholder="Enter"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
+            <label>Full Name</label>
+            <input 
+              type="text" 
+              name="fullName" 
+              placeholder="Enter" 
               required
+              value={formData.fullName}
+              onChange={handleChange}
             />
           </div>
-
           <div className="form-group">
-            <label className="form-label" htmlFor="reviewer-subject">Subject</label>
-            <input
-              type="text"
-              id="reviewer-subject"
-              className="form-input"
-              placeholder="Enter"
-              value={subject}
-              onChange={(e) => setSubject(e.target.value)}
-            />
-          </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="reviewer-text">Enter your Review</label>
-            <textarea
-              id="reviewer-text"
-              className="form-input"
-              placeholder="Description"
-              style={{ height: '120px', resize: 'vertical' }}
-              value={reviewText}
-              onChange={(e) => setReviewText(e.target.value)}
+            <label>Subject</label>
+            <input 
+              type="text" 
+              name="subject" 
+              placeholder="Enter" 
               required
+              value={formData.subject}
+              onChange={handleChange}
             />
           </div>
-
           <div className="form-group">
-            <label className="form-label">Rating</label>
-            <div className="star-selector-container">
-              <div className="star-selector-stars">
-                {[1, 2, 3, 4, 5].map((starValue) => (
-                  <button
-                    key={starValue}
-                    type="button"
-                    className="interactive-star"
-                    onClick={() => setRating(starValue)}
-                    onMouseEnter={() => setHoverRating(starValue)}
-                    onMouseLeave={() => setHoverRating(0)}
-                  >
-                    {starValue <= activeRating ? <FullStar /> : <EmptyStar />}
-                  </button>
-                ))}
-              </div>
-              <span className="rating-label-text">
-                {activeRating > 0 ? `${activeRating} = ${labels[activeRating]}` : 'Select Rating'}
-              </span>
-            </div>
+            <label>Enter your Review</label>
+            <textarea 
+              name="reviewText" 
+              placeholder="Description" 
+              style={{ height: '120px' }}
+              required
+              value={formData.reviewText}
+              onChange={handleChange}
+            ></textarea>
           </div>
-
-          <button type="submit" className="btn-pill-save">
-            Save
-          </button>
+          <div className="form-group">
+            <label>Rating</label>
+            <StarRatingInput rating={rating} setRating={setRating} />
+          </div>
+          <button type="submit" className="btn-save">Save</button>
         </form>
       </div>
     </div>
   );
-}
+};
+
+export default AddReviewModal;

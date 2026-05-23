@@ -1,205 +1,97 @@
 import React, { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
-import api from '../api';
+import Navbar from '../components/Navbar';
 import CompanyCard from '../components/CompanyCard';
 import AddCompanyModal from '../components/AddCompanyModal';
+import api from '../api';
 
-const PinIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-    <circle cx="12" cy="10" r="3"></circle>
-  </svg>
-);
-
-export default function HomePage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+const HomePage = () => {
   const [companies, setCompanies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  
-  // Local state for city input (controlled but only applied to searchParams on "Find Company" click)
-  const [cityInput, setCityInput] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [cityFilter, setCityFilter] = useState('');
+  const [sort, setSort] = useState('Name');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [error, setError] = useState(null);
 
-  // Sync cityInput state with URL search param on initial mount
-  useEffect(() => {
-    setCityInput(searchParams.get('city') || '');
-  }, []);
-
-  // Fetch companies whenever search parameters change
   const fetchCompanies = async () => {
-    setLoading(true);
-    setError('');
     try {
-      const search = searchParams.get('search') || '';
-      const city = searchParams.get('city') || '';
-      const sort = searchParams.get('sort') || '';
-      
-      const response = await api.get('/companies', {
-        params: { search, city, sort }
-      });
+      setError(null);
+      const params = {};
+      if (searchTerm) params.search = searchTerm;
+      if (cityFilter) params.city = cityFilter;
+      if (sort) params.sort = sort;
+
+      const response = await api.get('/companies', { params });
       setCompanies(response.data);
     } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || 'Failed to fetch companies. Please try again.');
-    } finally {
-      setLoading(false);
+      setError('Failed to fetch companies');
     }
   };
 
   useEffect(() => {
     fetchCompanies();
-  }, [searchParams]);
+  }, [cityFilter, sort]);
 
-  const handleFindCompany = () => {
-    const newParams = new URLSearchParams(searchParams);
-    if (cityInput.trim()) {
-      newParams.set('city', cityInput.trim());
-    } else {
-      newParams.delete('city');
-    }
-    setSearchParams(newParams);
+  const handleSearch = () => {
+    fetchCompanies();
   };
-
-  const handleCityKeyDown = (e) => {
-    if (e.key === 'Enter') {
-      handleFindCompany();
-    }
-  };
-
-  const handleSortChange = (e) => {
-    const sortValue = e.target.value;
-    const newParams = new URLSearchParams(searchParams);
-    if (sortValue) {
-      newParams.set('sort', sortValue);
-    } else {
-      newParams.delete('sort');
-    }
-    setSearchParams(newParams);
-  };
-
-  const handleSaveCompany = async (companyData) => {
-    try {
-      setError('');
-      await api.post('/companies', companyData);
-      setIsModalOpen(false);
-      // Refresh list
-      fetchCompanies();
-    } catch (err) {
-      console.error(err);
-      setError(err.response?.data?.message || 'Failed to add company. Please try again.');
-    }
-  };
-
-  const currentSort = searchParams.get('sort') || '';
 
   return (
-    <main>
-      {/* Filter bar */}
-      <section className="filter-bar-section">
-        <div className="container filter-bar-container">
-          <div className="filter-left">
-            <div className="filter-group">
-              <label className="filter-label" htmlFor="city-filter-input">Select City</label>
-              <div className="input-with-icon">
-                <span className="input-icon">
-                  <PinIcon />
-                </span>
-                <input
-                  type="text"
-                  id="city-filter-input"
-                  placeholder="Indore, Madhya Pradesh, India"
-                  value={cityInput}
-                  onChange={(e) => setCityInput(e.target.value)}
-                  onKeyDown={handleCityKeyDown}
-                />
-              </div>
+    <div>
+      <Navbar searchTerm={searchTerm} setSearchTerm={setSearchTerm} onSearch={handleSearch} />
+      
+      <div className="container">
+        <div className="filter-bar">
+          <div className="filter-group">
+            <label>Select City</label>
+            <div className="city-input-wrapper">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <input 
+                type="text" 
+                placeholder="Indore, Madhya Pradesh, India" 
+                value={cityFilter}
+                onChange={(e) => setCityFilter(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && fetchCompanies()}
+              />
             </div>
-
-            <button className="btn-primary" onClick={handleFindCompany}>
-              Find Company
-            </button>
-
-            <button className="btn-dark" onClick={() => setIsModalOpen(true)}>
-              + Add Company
-            </button>
           </div>
-
-          <div className="filter-right">
-            <label className="sort-label" htmlFor="company-sort-select">Sort:</label>
-            <select
-              id="company-sort-select"
-              className="sort-select"
-              value={currentSort}
-              onChange={handleSortChange}
-            >
-              <option value="">Default (Newest)</option>
-              <option value="name">Name</option>
-              <option value="rating">Average Rating</option>
-              <option value="location">Location</option>
+          
+          <button className="btn-primary" onClick={fetchCompanies}>Find Company</button>
+          
+          <button className="btn-dark" onClick={() => setIsAddModalOpen(true)}>+ Add Company</button>
+          
+          <div className="sort-wrapper">
+            <label>Sort:</label>
+            <select value={sort} onChange={(e) => setSort(e.target.value)}>
+              <option value="Name">Name</option>
+              <option value="Average Rating">Average Rating</option>
+              <option value="Location">Location</option>
             </select>
           </div>
         </div>
-      </section>
 
-      {/* Results found block */}
-      <div className="container">
-        <section className="results-info-section">
-          <span className="results-count-text">
-            Result Found: {companies.length}
-          </span>
-        </section>
+        <div className="results-count">
+          Result Found: {companies.length}
+        </div>
 
-        {error && (
-          <div className="error-alert-banner">
-            <span>{error}</span>
-            <button className="error-alert-close" onClick={() => setError('')}>&times;</button>
-          </div>
-        )}
+        {error && <div className="error-message">{error}</div>}
 
-        {/* List of companies */}
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '3rem 0', color: 'var(--muted-text)' }}>
-            <div className="loader" style={{ margin: '0 auto 1rem', width: '40px', height: '40px', border: '4px solid var(--card-border)', borderTop: '4px solid var(--primary-purple)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-            <p>Loading companies...</p>
-          </div>
-        ) : (
-          <div className="company-list-grid">
-            {companies.length > 0 ? (
-              companies.map((company) => (
-                <CompanyCard key={company._id} company={company} />
-              ))
-            ) : (
-              <div style={{
-                textAlign: 'center',
-                padding: '4rem 2rem',
-                backgroundColor: 'var(--white)',
-                borderRadius: 'var(--radius-md)',
-                border: '1px solid var(--card-border)',
-                color: 'var(--muted-text)'
-              }}>
-                <h3>No companies found</h3>
-                <p style={{ marginTop: '0.5rem' }}>Try refining your search terms or add a new company to get started!</p>
-              </div>
-            )}
-          </div>
-        )}
+        <div className="card-list">
+          {companies.map(company => (
+            <CompanyCard key={company._id} company={company} />
+          ))}
+        </div>
       </div>
 
-      {/* CSS Animation for Spinner */}
-      <style>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-
-      {/* Add Company Modal */}
-      <AddCompanyModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onSave={handleSaveCompany}
+      <AddCompanyModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onAdded={fetchCompanies}
       />
-    </main>
+    </div>
   );
-}
+};
+
+export default HomePage;

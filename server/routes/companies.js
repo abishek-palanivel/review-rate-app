@@ -7,8 +7,8 @@ router.get('/', companyController.getCompanies);
 router.post('/', companyController.createCompany);
 router.get('/:id', companyController.getCompanyById);
 
-// Reviews sub-routes
-router.get('/:id/reviews', reviewController.getReviewsByCompanyId);
-router.post('/:id/reviews', reviewController.addReview);
+// We can put the review routes related to a company here or in reviews.js
+router.get('/:id/reviews', reviewController.getReviews);
+router.post('/:id/reviews', reviewController.createReview);
 
 module.exports = router;

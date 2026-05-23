@@ -1,143 +1,104 @@
 import React, { useState } from 'react';
+import api from '../api';
 
-const PinIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-    <circle cx="12" cy="10" r="3"></circle>
-  </svg>
-);
-
-export default function AddCompanyModal({ isOpen, onClose, onSave }) {
-  const [name, setName] = useState('');
-  const [location, setLocation] = useState('');
-  const [foundedOn, setFoundedOn] = useState('');
-  const [city, setCity] = useState('');
+const AddCompanyModal = ({ isOpen, onClose, onAdded }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    location: '',
+    foundedOn: '',
+    city: ''
+  });
   const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleOverlayClick = (e) => {
-    if (e.target === e.currentTarget) {
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      await api.post('/companies', formData);
+      onAdded();
       onClose();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to add company');
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    setError('');
-
-    if (!name.trim()) {
-      setError('Company name is required.');
-      return;
+  const handleOverlayClick = (e) => {
+    if (e.target.className === 'modal-overlay') {
+      onClose();
     }
-    if (!location.trim()) {
-      setError('Location is required.');
-      return;
-    }
-    if (!foundedOn) {
-      setError('Founded date is required.');
-      return;
-    }
-    if (!city.trim()) {
-      setError('City is required.');
-      return;
-    }
-
-    onSave({
-      name: name.trim(),
-      location: location.trim(),
-      foundedOn,
-      city: city.trim()
-    });
   };
 
   return (
     <div className="modal-overlay" onClick={handleOverlayClick}>
       <div className="modal-content">
-        {/* Decorative Blobs */}
-        <div className="modal-blobs">
-          <div className="modal-blob-1"></div>
-          <div className="modal-blob-2"></div>
-        </div>
-
-        {/* Close Button */}
-        <button className="modal-close-btn" onClick={onClose} aria-label="Close modal">
-          &times;
-        </button>
-
-        {/* Title */}
+        <div className="modal-blob"></div>
+        <button className="modal-close" onClick={onClose}>&times;</button>
         <h2 className="modal-title">Add Company</h2>
-
-        {error && (
-          <div className="error-alert-banner">
-            <span>{error}</span>
-            <button className="error-alert-close" onClick={() => setError('')}>&times;</button>
-          </div>
-        )}
-
-        {/* Form */}
-        <form className="modal-form" onSubmit={handleSubmit}>
+        {error && <div className="error-message">{error}</div>}
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="company-name">Company Name</label>
-            <input
-              type="text"
-              id="company-name"
-              className="form-input"
-              placeholder="Enter..."
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+            <label>Company name</label>
+            <input 
+              type="text" 
+              name="name" 
+              placeholder="Enter..." 
               required
+              value={formData.name}
+              onChange={handleChange}
             />
           </div>
-
           <div className="form-group">
-            <label className="form-label" htmlFor="company-location">Location</label>
-            <div className="form-input-icon-wrapper">
-              <span className="input-icon">
-                <PinIcon />
-              </span>
-              <input
-                type="text"
-                id="company-location"
-                className="form-input"
-                placeholder="Select Location"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
+            <label>Location</label>
+            <div className="icon-input-wrapper">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <input 
+                type="text" 
+                name="location" 
+                placeholder="Select Location" 
                 required
+                value={formData.location}
+                onChange={handleChange}
               />
             </div>
           </div>
-
           <div className="form-group">
-            <label className="form-label" htmlFor="company-founded">Founded on</label>
-            <input
-              type="date"
-              id="company-founded"
-              className="form-input"
-              value={foundedOn}
-              onChange={(e) => setFoundedOn(e.target.value)}
+            <label>Founded on</label>
+            <div className="icon-input-wrapper">
+              <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <input 
+                type="date" 
+                name="foundedOn" 
+                required
+                value={formData.foundedOn}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+          <div className="form-group">
+            <label>City</label>
+            <input 
+              type="text" 
+              name="city" 
               required
+              value={formData.city}
+              onChange={handleChange}
             />
           </div>
-
-          <div className="form-group">
-            <label className="form-label" htmlFor="company-city">City</label>
-            <input
-              type="text"
-              id="company-city"
-              className="form-input"
-              placeholder="City"
-              value={city}
-              onChange={(e) => setCity(e.target.value)}
-              required
-            />
-          </div>
-
-          <button type="submit" className="btn-pill-save">
-            Save
-          </button>
+          <button type="submit" className="btn-save">Save</button>
         </form>
       </div>
     </div>
   );
-}
+};
+
+export default AddCompanyModal;

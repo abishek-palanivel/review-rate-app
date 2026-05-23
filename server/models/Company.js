@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
 
-const CompanySchema = new mongoose.Schema({
+const companySchema = new mongoose.Schema({
   name: { type: String, required: true },
-  location: { type: String },
-  city: { type: String },
-  foundedOn: { type: Date },
-  logoText: { type: String }, // 1-2 letters for placeholder logo
-  logoColor: { type: String }, // hex color for logo background
+  location: String,
+  city: String,
+  foundedOn: Date,
+  logoText: String,
+  logoColor: String,
   createdAt: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Company', CompanySchema);
+module.exports = mongoose.model('Company', companySchema);
