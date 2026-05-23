@@ -1,5 +1,7 @@
 # Review&RATE 🌟
 
+[![Live Demo](https://img.shields.io/badge/Live_Demo-Review%26RATE-7C3AED?style=for-the-badge&logo=vercel)](https://reviewrate-app.vercel.app/)
+
 Review&RATE is a complete, full-stack MERN application that allows users to discover IT companies, view detailed ratings, and share their own reviews. Built with a focus on premium aesthetics and responsive design.
 
 ## ✨ Features
