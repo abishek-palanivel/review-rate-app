@@ -21,10 +21,12 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal Server Error', error: err.message });
 });
 
-// Start the server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
+// Start the server locally if not in production (Vercel uses serverless)
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+}
 
 // Connect to MongoDB
 mongoose.connect(MONGO_URI)
@@ -34,3 +36,5 @@ mongoose.connect(MONGO_URI)
   .catch(err => {
     console.error('Database connection error:', err.message);
   });
+
+module.exports = app;
