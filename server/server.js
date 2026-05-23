@@ -21,14 +21,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ message: 'Internal Server Error', error: err.message });
 });
 
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
+
 // Connect to MongoDB
 mongoose.connect(MONGO_URI)
   .then(() => {
     console.log('Successfully connected to MongoDB.');
-    app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT}`);
-    });
   })
   .catch(err => {
-    console.error('Database connection error:', err);
+    console.error('Database connection error:', err.message);
   });
