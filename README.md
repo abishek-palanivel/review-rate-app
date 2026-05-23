@@ -37,7 +37,7 @@ cd reviewrate-app
 
 ### 2. Backend Setup
 ```bash
-cd server
+cd api
 npm install
 ```
 - The backend runs on port `5000` by default.
